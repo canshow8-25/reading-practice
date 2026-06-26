@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>English Reading Practice</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --surface2: #f0eeea;
+    --border: #e0ddd7;
+    --border2: #ccc9c1;
+    --text: #1a1917;
+    --text2: #6b6860;
+    --text3: #9e9b94;
+    --accent: #2563a8;
+    --accent-light: #e8f0fb;
+    --green: #639922;
+    --green-light: #eaf3de;
+    --green-text: #27500a;
+    --red: #a32d2d;
+    --red-light: #fcebeb;
+    --red-text: #791f1f;
+    --blue-light: #e6f1fb;
+    --blue-text: #0c447c;
+    --amber-light: #faeeda;
+    --amber-text: #633806;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  body {
+    background: var(--bg);
+    font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', Meiryo, sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+
+  .page {
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  header {
+    margin-bottom: 2rem;
+  }
+
+  header h1 {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+    color: var(--text);
+  }
+
+  header p {
+    font-size: 13px;
+    color: var(--text3);
+    margin-top: 4px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .card-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 0.6rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .edit-trigger {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text3);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    transition: background 0.15s, color 0.15s;
+  }
+  .edit-trigger:hover { background: var(--surface2); color: var(--text); }
+
+  .passage-display {
+    font-size: 19px;
+    line-height: 2.1;
+    color: var(--text);
+    min-height: 60px;
+  }
+
+  .word { display: inline; border-radius: 3px; padding: 1px 3px; transition: background 0.2s; cursor: pointer; }
+  .word:hover { box-shadow: inset 0 0 0 1.5px var(--accent); }
+  .word.correct { background: var(--green-light); color: var(--green-text); }
+  .word.missed  { background: var(--red-light);   color: var(--red-text); }
+
+  .word-hint { font-size: 11px; color: var(--text3); margin-top: 6px; }
+
+  /* Model audio controls */
+  .model-audio {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 0.9rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .btn-play {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border2);
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-play:hover { background: var(--accent-light); border-color: var(--accent); }
+  .slow-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text2);
+    cursor: pointer;
+    user-select: none;
+  }
+  .slow-toggle input { cursor: pointer; }
+
+  .legend {
+    display: flex;
+    gap: 14px;
+    margin-top: 0.75rem;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--text3);
+  }
+  .legend-pip {
+    width: 10px; height: 10px; border-radius: 2px;
+  }
+
+  /* Stats row */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 1rem;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.9rem 1rem;
+  }
+  .stat-label { font-size: 11px; color: var(--text3); margin-bottom: 4px; }
+  .stat-value { font-size: 24px; font-weight: 600; color: var(--text); }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .btn-rec {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 22px;
+    border-radius: var(--radius);
+    border: 1.5px solid var(--accent);
+    background: var(--accent);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .btn-rec:hover { opacity: 0.88; }
+  .btn-rec:active { transform: scale(0.98); }
+  .btn-rec.recording {
+    background: var(--red-light);
+    border-color: #f09595;
+    color: var(--red);
+  }
+
+  .btn-sub {
+    padding: 10px 16px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border2);
+    background: var(--surface);
+    color: var(--text2);
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-sub:hover { background: var(--surface2); }
+
+  /* Status */
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 1rem;
+    min-height: 20px;
+  }
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--border2);
+    flex-shrink: 0;
+  }
+  .status-dot.active { background: #e24b4a; animation: blink 1s infinite; }
+  .status-dot.done   { background: var(--green); }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* Transcript */
+  .transcript-label { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text3); margin-bottom: 6px; }
+  .transcript-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem 1rem;
+    font-size: 14px;
+    color: var(--text2);
+    min-height: 46px;
+    line-height: 1.6;
+    margin-bottom: 1rem;
+  }
+
+  /* Advice box */
+  .advice-box {
+    background: var(--blue-light);
+    border: 1px solid #b8d4ef;
+    border-radius: var(--radius-sm);
+    padding: 0.85rem 1rem;
+    font-size: 14px;
+    color: var(--blue-text);
+    line-height: 1.8;
+    margin-bottom: 1rem;
+    white-space: pre-line;
+    display: none;
+  }
+  .advice-box.show { display: block; }
+  .advice-title { font-weight: 600; margin-bottom: 4px; font-size: 13px; }
+
+  /* No support */
+  .alert {
+    background: var(--amber-light);
+    border: 1px solid #fac775;
+    border-radius: var(--radius-sm);
+    padding: 0.75rem 1rem;
+    font-size: 13px;
+    color: var(--amber-text);
+    margin-bottom: 1rem;
+    display: none;
+  }
+
+  /* Edit modal overlay */
+  .modal-bg {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-bg.show { display: flex; }
+  .modal {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    width: 90%;
+    max-width: 480px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  }
+  .modal h2 { font-size: 16px; font-weight: 600; margin-bottom: 1rem; }
+  .modal textarea {
+    width: 100%;
+    min-height: 120px;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem;
+    font-size: 15px;
+    line-height: 1.7;
+    font-family: inherit;
+    resize: vertical;
+    background: var(--surface2);
+    color: var(--text);
+    outline: none;
+    margin-bottom: 0.75rem;
+  }
+  .modal textarea:focus { border-color: var(--accent); }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+  /* PIN screen */
+  .pin-screen { text-align: center; }
+  .pin-screen p { font-size: 14px; color: var(--text2); margin-bottom: 1rem; }
+  .pin-input {
+    width: 130px;
+    text-align: center;
+    font-size: 26px;
+    letter-spacing: 8px;
+    padding: 10px;
+    border: 1.5px solid var(--border2);
+    border-radius: var(--radius-sm);
+    background: var(--surface2);
+    color: var(--text);
+    outline: none;
+    display: block;
+    margin: 0 auto 0.5rem;
+  }
+  .pin-input:focus { border-color: var(--accent); }
+  .pin-error { font-size: 12px; color: var(--red); height: 16px; margin-bottom: 0.75rem; }
+  .pin-actions { display: flex; gap: 8px; justify-content: center; }
+
+  /* Mic icon SVG */
+  .mic-icon { width: 18px; height: 18px; flex-shrink: 0; }
+  .stop-icon { width: 14px; height: 14px; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <header>
+    <h1>English Reading Practice</h1>
+    <p>音読して、発音・正確さをチェックしよう</p>
+  </header>
+
+  <div id="no-support" class="alert">
+    ⚠ このブラウザは音声認識に対応していません。Chrome または Edge でお試しください。
+  </div>
+
+  <!-- Passage card -->
+  <div class="card" style="margin-bottom:1rem;">
+    <div class="card-label">
+      課題文
+      <button class="edit-trigger" onclick="openEdit()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        編集（PIN）
+      </button>
+    </div>
+    <div class="passage-display" id="passage-display"></div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-pip" style="background:var(--green-light); border:1px solid #c0dd97;"></div>正確に読めた</div>
+      <div class="legend-item"><div class="legend-pip" style="background:var(--red-light); border:1px solid #f7c1c1;"></div>認識できず</div>
+    </div>
+    <div class="word-hint">💡 文中の単語をクリックすると、その単語だけ発音を聞けます</div>
+    <div class="model-audio">
+      <button class="btn-play" id="play-all-btn" onclick="playModelAudio()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        モデル音声を聞く
+      </button>
+      <label class="slow-toggle">
+        <input type="checkbox" id="slow-toggle" />
+        ゆっくり再生
+      </label>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-label">練習回数</div>
+      <div class="stat-value" id="stat-tries">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">正確率</div>
+      <div class="stat-value" id="stat-score">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">語数（正 / 全）</div>
+      <div class="stat-value" id="stat-words">—</div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="status-bar">
+    <div class="status-dot" id="status-dot"></div>
+    <span id="status-text">「録音開始」を押してマイクをオンにする</span>
+  </div>
+
+  <div class="controls">
+    <button class="btn-rec" id="rec-btn" onclick="toggleRec()">
+      <svg class="mic-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="rec-icon-svg"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/></svg>
+      <span id="rec-label">録音開始</span>
+    </button>
+    <button class="btn-sub" onclick="resetSession()">リセット</button>
+  </div>
+
+  <!-- Transcript -->
+  <div class="transcript-label">認識されたテキスト</div>
+  <div class="transcript-box" id="transcript-box">—</div>
+
+  <!-- Advice -->
+  <div class="advice-box" id="advice-box">
+    <div class="advice-title">📝 アドバイス</div>
+    <div id="advice-text"></div>
+  </div>
+
+</div>
+
+<!-- Edit modal -->
+<div class="modal-bg" id="modal-bg">
+  <div class="modal">
+    <!-- PIN screen -->
+    <div id="pin-screen" class="pin-screen">
+      <h2>🔒 PINコードを入力</h2>
+      <p>課題文を編集するにはPINが必要です</p>
+      <input class="pin-input" type="password" inputmode="numeric" maxlength="4" id="pin-input" placeholder="••••" />
+      <div class="pin-error" id="pin-error"></div>
+      <div class="pin-actions">
+        <button class="btn-sub" onclick="checkPin()">確認</button>
+        <button class="btn-sub" onclick="closeModal()">キャンセル</button>
+      </div>
+    </div>
+    <!-- Edit screen -->
+    <div id="edit-screen" style="display:none;">
+      <h2>課題文を編集</h2>
+      <textarea id="passage-edit" placeholder="英文を入力..."></textarea>
+      <div class="modal-actions">
+        <button class="btn-sub" onclick="closeModal()">キャンセル</button>
+        <button class="btn-rec" style="padding:10px 20px; font-size:14px;" onclick="savePassage()">保存して練習開始</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CORRECT_PIN = "1234";
+const DEFAULT_PASSAGE = "The quick brown fox jumps over the lazy dog. Reading aloud every day helps you improve your pronunciation and fluency in English.";
+
+let passage = DEFAULT_PASSAGE;
+let tries = 0;
+let recognition = null;
+let isRecording = false;
+let pinUnlocked = false;
+let finalT = "";
+let lastEvalMap = null;
+let lastEvalTargets = null;
+let englishVoice = null;
+
+function loadVoices() {
+  const voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+  englishVoice =
+    voices.find(v => v.lang === "en-US" && /Google|Natural|Female|Samantha/i.test(v.name)) ||
+    voices.find(v => v.lang && v.lang.startsWith("en")) ||
+    null;
+}
+if (window.speechSynthesis) {
+  loadVoices();
+  window.speechSynthesis.onvoiceschanged = loadVoices;
+}
+
+function speakText(text) {
+  if (!window.speechSynthesis) {
+    alert("このブラウザは音声合成（読み上げ）に対応していません。Chrome または Edge でお試しください。");
+    return;
+  }
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "en-US";
+  if (englishVoice) utter.voice = englishVoice;
+  const slow = document.getElementById("slow-toggle");
+  utter.rate = (slow && slow.checked) ? 0.7 : 1.0;
+  window.speechSynthesis.speak(utter);
+}
+
+function playModelAudio() {
+  speakText(passage);
+}
+
+function speakWord(el) {
+  const w = el.getAttribute("data-word");
+  if (w) speakText(w);
+}
+
+function tokenize(t) { return t.match(/[\w']+/g) || []; }
+function norm(w) { return w.toLowerCase().replace(/[^a-z0-9']/g, ""); }
+
+function renderPassage(map) {
+  const el = document.getElementById("passage-display");
+  let wi = 0;
+  let html = "";
+  const parts = passage.split(/(\s+)/);
+  for (const p of parts) {
+    if (/^\s+$/.test(p)) { html += p; continue; }
+    const cls = map ? (map[wi] || "") : "";
+    const safeWord = p.replace(/"/g, "&quot;");
+    html += `<span class="word ${cls}" data-word="${safeWord}" onclick="speakWord(this)">${p}</span>`;
+    wi++;
+  }
+  el.innerHTML = html;
+}
+
+function evaluate(transcript) {
+  const targets = tokenize(passage);
+  const spoken = tokenize(transcript).map(norm);
+  const map = {};
+  let si = 0;
+  for (let i = 0; i < targets.length; i++) {
+    const t = norm(targets[i]);
+    if (si < spoken.length && spoken[si] === t) {
+      map[i] = "correct"; si++;
+    } else {
+      const look = spoken.slice(si, si + 5);
+      const found = look.indexOf(t);
+      if (found !== -1) { map[i] = "correct"; si += found + 1; }
+      else { map[i] = "missed"; }
+    }
+  }
+  const correct = Object.values(map).filter(v => v === "correct").length;
+  return { map, total: targets.length, correct };
+}
+
+const FUNCTION_WORDS = new Set([
+  "a","an","the","of","to","in","on","at","is","are","was","were","be","been","am",
+  "and","but","or","for","with","as","by","from","that","this","these","those",
+  "it","its","he","she","they","we","you","i","his","her","their","our","your","my",
+  "do","does","did","has","have","had","will","would","can","could","should",
+  "not","no","so","if","than","then","into","about","over","under","up","down","out"
+]);
+
+function generateAdvice(map, targets) {
+  const total = targets.length;
+  if (total === 0) return "";
+  const missedIdx = Object.keys(map).filter(i => map[i] === "missed").map(Number);
+  const correct = total - missedIdx.length;
+  const accuracy = correct / total;
+
+  if (missedIdx.length === 0) {
+    return "🎉 すべての単語を正確に読み取れました。とても良い発音です。この調子で続けましょう！";
+  }
+
+  const missedWords = missedIdx.map(i => targets[i]);
+  const missedFunctionWords = [...new Set(missedWords.filter(w => FUNCTION_WORDS.has(norm(w))))];
+  const missedContentWords = [...new Set(missedWords.filter(w => !FUNCTION_WORDS.has(norm(w))))];
+
+  const lines = [];
+  if (accuracy >= 0.9) {
+    lines.push("👍 全体的にとても良く読めています。");
+  } else if (accuracy >= 0.7) {
+    lines.push("✓ おおむね良く読めていますが、いくつか抜けている単語があります。");
+  } else {
+    lines.push("もう少し練習が必要です。落ち着いて、一語一語はっきり発音してみましょう。");
+  }
+
+  if (missedFunctionWords.length > 0) {
+    const sample = missedFunctionWords.slice(0, 6).join(", ");
+    lines.push(`a, the, of, is のような短い単語（${sample}）が読み飛ばされたか認識されませんでした。短い単語もしっかり発音すると認識されやすくなります。`);
+  }
+  if (missedContentWords.length > 0) {
+    const sample = missedContentWords.slice(0, 5).join(", ");
+    lines.push(`次の単語の発音をもう一度確認してみましょう: ${sample}`);
+  }
+  if (missedIdx.length >= total * 0.4) {
+    lines.push("認識されなかった単語が多いようです。読むスピードを少し落とすか、マイクに近づいて読んでみてください。");
+  }
+  return lines.join("\n");
+}
+
+function showAdvice(text) {
+  const box = document.getElementById("advice-box");
+  if (!text) { box.classList.remove("show"); return; }
+  document.getElementById("advice-text").textContent = text;
+  box.classList.add("show");
+}
+
+function hideAdvice() {
+  document.getElementById("advice-box").classList.remove("show");
+}
+
+function setStatus(msg, mode) {
+  document.getElementById("status-text").textContent = msg;
+  const d = document.getElementById("status-dot");
+  d.className = "status-dot" + (mode === "active" ? " active" : mode === "done" ? " done" : "");
+}
+
+function setupSpeech() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    document.getElementById("no-support").style.display = "block";
+    document.getElementById("rec-btn").disabled = true;
+    return false;
+  }
+  recognition = new SR();
+  recognition.lang = "en-US";
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.maxAlternatives = 1;
+
+  recognition.onresult = (e) => {
+    finalT = "";
+    let interim = "";
+    for (let i = 0; i < e.results.length; i++) {
+      if (e.results[i].isFinal) finalT += e.results[i][0].transcript + " ";
+      else interim += e.results[i][0].transcript;
+    }
+    const combined = (finalT + interim).trim();
+    document.getElementById("transcript-box").textContent = combined || "—";
+    if (combined) {
+      const { map, total, correct } = evaluate(combined);
+      renderPassage(map);
+      document.getElementById("stat-score").textContent = Math.round(correct / total * 100) + "%";
+      document.getElementById("stat-words").textContent = correct + " / " + total;
+      lastEvalMap = map;
+      lastEvalTargets = tokenize(passage);
+    }
+  };
+
+  recognition.onerror = (e) => {
+    if (e.error === "not-allowed") setStatus("マイクのアクセス許可が必要です。ブラウザのアドレスバー左のアイコンから許可してください", "");
+    else if (e.error === "no-speech") setStatus("音声が検出されませんでした。もう一度お試しください", "");
+    else setStatus("エラー: " + e.error, "");
+    stopRec();
+  };
+
+  recognition.onend = () => {
+    if (isRecording) { try { recognition.start(); } catch(ex) {} }
+  };
+  return true;
+}
+
+function toggleRec() {
+  if (isRecording) stopRec(); else startRec();
+}
+
+function startRec() {
+  if (!recognition && !setupSpeech()) return;
+  finalT = "";
+  tries++;
+  document.getElementById("stat-tries").textContent = tries;
+  document.getElementById("transcript-box").textContent = "—";
+  document.getElementById("stat-score").textContent = "—";
+  document.getElementById("stat-words").textContent = "—";
+  lastEvalMap = null;
+  lastEvalTargets = null;
+  hideAdvice();
+  renderPassage(null);
+  try {
+    recognition.start();
+    isRecording = true;
+    const btn = document.getElementById("rec-btn");
+    btn.classList.add("recording");
+    document.getElementById("rec-icon-svg").innerHTML = '<rect x="4" y="4" width="16" height="16" rx="2"/>';
+    document.getElementById("rec-label").textContent = "録音停止";
+    setStatus("録音中 — ゆっくり、はっきり読んでください", "active");
+  } catch(e) {
+    setStatus("マイク起動に失敗しました。ページをリロードしてもう一度お試しください", "");
+  }
+}
+
+function stopRec() {
+  isRecording = false;
+  try { recognition.stop(); } catch(e) {}
+  const btn = document.getElementById("rec-btn");
+  btn.classList.remove("recording");
+  document.getElementById("rec-icon-svg").innerHTML = '<rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="8" y1="22" x2="16" y2="22"/>';
+  document.getElementById("rec-label").textContent = "録音開始";
+  setStatus("評価完了 — もう一度挑戦するには「録音開始」を押してください", "done");
+  if (lastEvalMap && lastEvalTargets) {
+    showAdvice(generateAdvice(lastEvalMap, lastEvalTargets));
+  } else {
+    showAdvice("音声が認識されませんでした。もう一度、はっきりと読んでみましょう。");
+  }
+}
+
+function resetSession() {
+  if (isRecording) stopRec();
+  tries = 0;
+  document.getElementById("stat-tries").textContent = "0";
+  document.getElementById("stat-score").textContent = "—";
+  document.getElementById("stat-words").textContent = "—";
+  document.getElementById("transcript-box").textContent = "—";
+  lastEvalMap = null;
+  lastEvalTargets = null;
+  hideAdvice();
+  renderPassage(null);
+  setStatus("「録音開始」を押してマイクをオンにする", "");
+}
+
+function openEdit() {
+  document.getElementById("modal-bg").classList.add("show");
+  if (pinUnlocked) {
+    showEditScreen();
+  } else {
+    document.getElementById("pin-screen").style.display = "block";
+    document.getElementById("edit-screen").style.display = "none";
+    setTimeout(() => document.getElementById("pin-input").focus(), 50);
+  }
+}
+
+function closeModal() {
+  document.getElementById("modal-bg").classList.remove("show");
+  document.getElementById("pin-error").textContent = "";
+  document.getElementById("pin-input").value = "";
+}
+
+function checkPin() {
+  const v = document.getElementById("pin-input").value;
+  if (v === CORRECT_PIN) {
+    pinUnlocked = true;
+    document.getElementById("pin-error").textContent = "";
+    document.getElementById("pin-input").value = "";
+    showEditScreen();
+  } else {
+    document.getElementById("pin-error").textContent = "PINが違います";
+    document.getElementById("pin-input").value = "";
+    document.getElementById("pin-input").focus();
+  }
+}
+
+function showEditScreen() {
+  document.getElementById("pin-screen").style.display = "none";
+  document.getElementById("edit-screen").style.display = "block";
+  document.getElementById("passage-edit").value = passage;
+  setTimeout(() => document.getElementById("passage-edit").focus(), 50);
+}
+
+function savePassage() {
+  const v = document.getElementById("passage-edit").value.trim();
+  if (!v) return;
+  passage = v;
+  closeModal();
+  resetSession();
+}
+
+document.getElementById("pin-input").addEventListener("keydown", e => {
+  if (e.key === "Enter") checkPin();
+});
+
+document.getElementById("modal-bg").addEventListener("click", e => {
+  if (e.target === document.getElementById("modal-bg")) closeModal();
+});
+
+setupSpeech();
+renderPassage(null);
+</script>
+</body>
+</html>
